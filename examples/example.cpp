@@ -4,31 +4,20 @@
 
 using memory_pool::MemoryPool;
 
-// TODO:
-// 1. Add GitHub tests for all platforms; make sure compile-error-free
-// 2. Add 'verbose' mode? To print pool statistics/info
-// 2. Make appropriate functions private in memory_pool
-// 3. Separate into header and .cpp file
-// 4. Add macros to disable safety checks
-// 5. CHECK MOVE IN ALLOCATE_BLOCK WORKS
-// 6. Compare speed to general memory allocation?
-// 7. Add option to zero out the blocks where we deallocate?
-// 8. Use RAII to make thread-safe? NOT NECESSARY
-
-void test_point()
+void run_point()
 {
   // Create
   MemoryPool<Point> pool(100);
   std::cout << "\nPoint pool size: " << pool.size() << std::endl;
 }
 
-void test_base1()
+void run_base1()
 {
-  // Uncomment and run to produce an error
-  MemoryPool<Base1> pool(memory_pool::g_MaxNumberOfObjectsInPool + 1);
+  MemoryPool<Base1> pool(memory_pool::g_MaxNumberOfObjectsInPool);
+  std::cout << "\nBase1 allocated pool size: " << pool.size() << std::endl;
 }
 
-void test_base2()
+void run_base2()
 {
   MemoryPool<Base2> pool;
   std::cout << "\nBase2 unallocated pool size: " << pool.size() << std::endl;
@@ -36,7 +25,7 @@ void test_base2()
   std::cout << "Base2 allocated pool size: " << pool.size() << std::endl;
 }
 
-void test_derived()
+void run_derived()
 {
   std::cout << "\nDerived object size: " << sizeof(Derived) << std::endl;
 
@@ -53,7 +42,7 @@ void test_derived()
   std::cout << "Derived allocated block addr: " << block_pt << std::endl;
 }
 
-void test_no_default_constructor()
+void run_no_default_constructor()
 {
   std::cout << "\nNoDefaultConstructor object size: " << sizeof(NoDefaultConstructor) << std::endl;
 
@@ -74,9 +63,9 @@ void test_no_default_constructor()
 
 int main()
 {
-  test_point();
-  // test_base1(); // Will throw an assert error
-  test_base2();
-  test_derived();
-  test_no_default_constructor();
+  run_point();
+  // run_base1(); // Will throw an assert error
+  run_base2();
+  run_derived();
+  run_no_default_constructor();
 }

@@ -1,7 +1,6 @@
 #ifndef ARM_CPP_TEST_MEMORY_POOL_HEADER
 #define ARM_CPP_TEST_MEMORY_POOL_HEADER
 
-// Generated with include-what-you-use:
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -13,11 +12,24 @@
 
 namespace memory_pool
 {
+  /****************************************************************************************
+   * @brief Type aliases
+   *
+   ****************************************************************************************/
   using Byte = std::byte;
   using SizeT = uint64_t;
 
+  /****************************************************************************************
+   * @brief Maximum number of objects in any pool
+   *
+   ****************************************************************************************/
   const SizeT g_MaxNumberOfObjectsInPool = 1000;
 
+  /****************************************************************************************
+   * @brief Memory pool class
+   *
+   * @tparam T:
+   ****************************************************************************************/
   template<class T>
   class MemoryPool
   {
@@ -31,17 +43,17 @@ namespace memory_pool
 
     T* allocate_object();
     T* allocate_object(T&& obj);
-    void deallocate_object(T& obj) { deallocate_object(&obj); }
-    void deallocate_object(const T* const obj_pt);
+    void deallocate_object(T** const obj_pt);
 
-    inline SizeT size() { return Max_objects * sizeof(T); }
+    inline SizeT size() { return Max_objects; }
+    inline SizeT size_in_bytes() { return Max_objects * sizeof(T); }
+    inline SizeT available_capacity() { return Free_blocks.size(); }
+
+    bool in_pool(const T* const obj_pt);
 
   private:
     inline Byte* start() { return Pool_pt; }
-    inline Byte* end() { return Pool_pt + size(); }
-
-    bool in_pool(const T& obj) { return in_pool(&obj); }
-    bool in_pool(const T* const obj_pt);
+    inline Byte* end() { return Pool_pt + size_in_bytes(); }
 
     Byte* get_address_of_nth_block(const SizeT& block_index);
     SizeT get_position_in_pool(const T& obj) { return get_position_in_pool(&obj); }
@@ -54,7 +66,6 @@ namespace memory_pool
     std::queue<SizeT> Free_blocks;
   };
 
-
   /****************************************************************************************
    * @brief
    *
@@ -64,7 +75,7 @@ namespace memory_pool
   template<class T>
   void MemoryPool<T>::create_pool(const SizeT& max_object)
   {
-    assert(max_object <= g_MaxNumberOfObjectsInPool);
+    if (max_object > g_MaxNumberOfObjectsInPool) throw std::bad_alloc();
     assert(Pool_pt == nullptr);
     assert(Free_blocks.size() == 0);
 
@@ -76,7 +87,6 @@ namespace memory_pool
       Free_blocks.push(i);
     }
   }
-
 
   /****************************************************************************************
    * @brief
@@ -91,7 +101,6 @@ namespace memory_pool
     Max_objects = 0;
     Free_blocks = std::queue<SizeT>();
   }
-
 
   /****************************************************************************************
    * @brief
@@ -109,7 +118,6 @@ namespace memory_pool
     return block_pt;
   }
 
-
   /****************************************************************************************
    * @brief
    *
@@ -126,7 +134,6 @@ namespace memory_pool
     return block_pt;
   }
 
-
   /****************************************************************************************
    * @brief
    *
@@ -134,13 +141,13 @@ namespace memory_pool
    * @param obj_pt:
    ****************************************************************************************/
   template<class T>
-  void MemoryPool<T>::deallocate_object(const T* const obj_pt)
+  void MemoryPool<T>::deallocate_object(T** const obj_pt)
   {
-    assert(in_pool(obj_pt));
-    auto pos = get_position_in_pool(obj_pt);
+    assert(in_pool(*obj_pt));
+    auto pos = get_position_in_pool(*obj_pt);
     Free_blocks.push(pos);
+    *obj_pt = nullptr;
   }
-
 
   /****************************************************************************************
    * @brief
@@ -153,11 +160,10 @@ namespace memory_pool
   template<class T>
   bool MemoryPool<T>::in_pool(const T* const obj_pt)
   {
-    SizeT pool_size = this->size();
-    if ((obj_pt >= this->start()) && (obj_pt < this->end())) return true;
+    auto byte_pt = reinterpret_cast<const Byte* const>(obj_pt);
+    if ((byte_pt >= this->start()) or (byte_pt < this->end())) return true;
     return false;
   }
-
 
   /****************************************************************************************
    * @brief
@@ -174,7 +180,6 @@ namespace memory_pool
     return this->start() + offset;
   }
 
-
   /****************************************************************************************
    * @brief
    *
@@ -186,9 +191,9 @@ namespace memory_pool
   SizeT MemoryPool<T>::get_position_in_pool(const T* const obj_pt)
   {
     assert(in_pool(obj_pt));
-    return (obj_pt - Pool_pt) / sizeof(T);
+    auto byte_pt = reinterpret_cast<const Byte* const>(obj_pt);
+    return (byte_pt - Pool_pt) / sizeof(T);
   }
-
 
   /****************************************************************************************
    * @brief

@@ -4,11 +4,10 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <queue>
+#include <stack>
 #include <stdexcept>
 #include <string>
 #include <utility>
-
 
 namespace memory_pool
 {
@@ -30,11 +29,41 @@ namespace memory_pool
    *
    * @tparam T:
    ****************************************************************************************/
+  class PoolAllocationTracker
+  {
+  public:
+    PoolAllocationTracker() : Blocks() {}
+    PoolAllocationTracker(const SizeT& max_object) : PoolAllocationTracker() {}
+    ~PoolAllocationTracker() { Blocks = {}; }
+
+    void setup(const SizeT& max_object)
+    {
+      for (SizeT i = 0; i < max_object; i++) Blocks.push(i);
+    }
+    void clear() { Blocks = {}; }
+    inline SizeT size() { return Blocks.size(); }
+    inline void push(SizeT pos) { Blocks.push(std::move(pos)); }
+    inline SizeT pop()
+    {
+      SizeT index = Blocks.top();
+      Blocks.pop();
+      return index;
+    }
+
+  private:
+    std::stack<SizeT> Blocks;
+  };
+
+  /****************************************************************************************
+   * @brief Memory pool class
+   *
+   * @tparam T:
+   ****************************************************************************************/
   template<class T>
   class MemoryPool
   {
   public:
-    MemoryPool() : Pool_pt(nullptr), Max_objects(0), Free_blocks() {}
+    MemoryPool() : Pool_pt(nullptr), Max_objects(0), Free_blocks_tracker() {}
     MemoryPool(const SizeT& max_object) : MemoryPool() { create_pool(max_object); }
     ~MemoryPool() { destroy_pool(); }
 
@@ -46,12 +75,12 @@ namespace memory_pool
     void deallocate_object(T** const obj_pt);
 
     inline SizeT size() { return Max_objects; }
-    inline SizeT size_in_bytes() { return Max_objects * sizeof(T); }
-    inline SizeT available_capacity() { return Free_blocks.size(); }
-
-    bool in_pool(const T* const obj_pt);
+    inline SizeT available_capacity() { return Free_blocks_tracker.size(); }
 
   private:
+    bool in_pool(const T* const obj_pt);
+
+    inline SizeT size_in_bytes() { return Max_objects * sizeof(T); }
     inline Byte* start() { return Pool_pt; }
     inline Byte* end() { return Pool_pt + size_in_bytes(); }
 
@@ -63,7 +92,7 @@ namespace memory_pool
 
     Byte* Pool_pt;
     SizeT Max_objects;
-    std::queue<SizeT> Free_blocks;
+    PoolAllocationTracker Free_blocks_tracker;
   };
 
   /****************************************************************************************
@@ -77,15 +106,10 @@ namespace memory_pool
   {
     if (max_object > g_MaxNumberOfObjectsInPool) throw std::bad_alloc();
     assert(Pool_pt == nullptr);
-    assert(Free_blocks.size() == 0);
-
+    assert(Free_blocks_tracker.size() == 0);
     Max_objects = max_object;
-    SizeT pool_size_in_bytes = Max_objects * sizeof(T);
-    Pool_pt = new Byte[pool_size_in_bytes];
-    for (SizeT i = 0; i < Max_objects; i++)
-    {
-      Free_blocks.push(i);
-    }
+    Pool_pt = new Byte[this->size_in_bytes()];
+    Free_blocks_tracker.setup(Max_objects);
   }
 
   /****************************************************************************************
@@ -99,7 +123,7 @@ namespace memory_pool
     delete[] Pool_pt;
     Pool_pt = nullptr;
     Max_objects = 0;
-    Free_blocks = std::queue<SizeT>();
+    Free_blocks_tracker.clear();
   }
 
   /****************************************************************************************
@@ -112,9 +136,9 @@ namespace memory_pool
   T* MemoryPool<T>::allocate_object()
   {
     check_pool_has_available_space();
-    const auto index = Free_blocks.front();
-    Free_blocks.pop();
-    T* block_pt = static_cast<T*>((void*)get_address_of_nth_block(index));
+    const auto index = Free_blocks_tracker.pop();
+    Byte* byte_pt = get_address_of_nth_block(index);
+    T* block_pt = static_cast<T*>((void*)byte_pt);
     return block_pt;
   }
 
@@ -145,7 +169,7 @@ namespace memory_pool
   {
     assert(in_pool(*obj_pt));
     auto pos = get_position_in_pool(*obj_pt);
-    Free_blocks.push(pos);
+    Free_blocks_tracker.push(pos);
     *obj_pt = nullptr;
   }
 
@@ -203,7 +227,7 @@ namespace memory_pool
   template<class T>
   void MemoryPool<T>::check_pool_has_available_space()
   {
-    if (Free_blocks.size() > 0) return;
+    if (Free_blocks_tracker.size() > 0) return;
     throw std::out_of_range("No more space available; all " + std::to_string(Max_objects) +
                             " blocks allocated!");
   }

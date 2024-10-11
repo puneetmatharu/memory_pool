@@ -11,7 +11,6 @@ TEST_CASE("Point")
 {
   MemoryPool<Point> pool(100);
   REQUIRE(pool.size() == 100);
-  REQUIRE(pool.size_in_bytes() == 100 * sizeof(Point));
 }
 
 
@@ -29,7 +28,6 @@ TEST_CASE("Base2")
   MemoryPool<Base2> pool;
   pool.create_pool(10);
   REQUIRE(pool.size() == 10);
-  REQUIRE(pool.size_in_bytes() == 10 * sizeof(Base2));
 }
 
 
@@ -76,7 +74,6 @@ TEST_CASE("NoDefaultConstructor")
 
   SUBCASE("Check object assigned after block allocation is valid")
   {
-    CHECK(pool.in_pool(block2_pt) == true);
     CHECK(pool.available_capacity() == 0);
     CHECK(block2_pt->GetNumber() == 19);
   }

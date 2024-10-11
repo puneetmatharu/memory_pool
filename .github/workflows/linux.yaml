@@ -1,0 +1,27 @@
+name: Ubuntu
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install requirements
+        run: sudo apt-get install -y ninja-build
+
+      - name: Configure
+        run: cmake -G Ninja -B build
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest
+        working-directory: build
+
+      - name: Benchmark
+        run: ./benchmark_memory_pool
+        working-directory: build/benchmark

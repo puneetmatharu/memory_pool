@@ -1,5 +1,5 @@
-#ifndef ARM_CPP_TEST_MEMORY_POOL_HEADER
-#define ARM_CPP_TEST_MEMORY_POOL_HEADER
+#ifndef MEMORY_POOL_MEMORY_POOL_HEADER
+#define MEMORY_POOL_MEMORY_POOL_HEADER
 
 #include <cassert>
 #include <cstddef>
@@ -209,4 +209,4 @@ namespace memory_pool
   }
 } // namespace memory_pool
 
-#endif // ARM_CPP_TEST_MEMORY_POOL_HEADER
+#endif // MEMORY_POOL_MEMORY_POOL_HEADER

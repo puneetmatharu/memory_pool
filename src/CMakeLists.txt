@@ -3,4 +3,5 @@
 # the relevant headers can be found
 add_library(memory_pool INTERFACE)
 target_include_directories(memory_pool INTERFACE "${CMAKE_CURRENT_LIST_DIR}")
+add_library(memory_pool::memory_pool ALIAS memory_pool)
 # -------------------------------------------------------------------------------------------------

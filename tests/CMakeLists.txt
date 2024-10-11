@@ -9,7 +9,7 @@ FetchContent_MakeAvailable(doctest)
 
 # Define test_memory_pool executable and link to the required libraries
 add_executable(test_memory_pool test_memory_pool.cpp)
-target_link_libraries(test_memory_pool PRIVATE memory_pool doctest)
+target_link_libraries(test_memory_pool PRIVATE memory_pool::memory_pool doctest::doctest)
 
 # Define the test target to be run when 'ctest' is invoked
 add_test(NAME test_memory_pool COMMAND test_memory_pool)

@@ -10,11 +10,9 @@ using memory_pool::MemoryPool;
 static void benchmark_point_multiple_pool_allocations_with_memory_pool(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     MemoryPool<Point> pool;
-    for (auto i = 0; i < 1000; i++)
-    {
+    for (auto i = 0; i < 1000; i++) {
       pool.allocate(pool_size);
       pool.clear();
     }
@@ -27,11 +25,9 @@ static void benchmark_point_multiple_pool_allocations_with_vector(benchmark::Sta
   // NOTE: Can compare allocations with a vector-based pool for basic types but a vector won't
   // work when the template type has no default constructor
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     std::vector<Point> pool;
-    for (auto i = 0; i < 1000; i++)
-    {
+    for (auto i = 0; i < 1000; i++) {
       pool.resize(pool_size);
       pool.clear();
     }
@@ -42,12 +38,10 @@ static void benchmark_point_multiple_pool_allocations_with_vector(benchmark::Sta
 static void benchmark_point_with_memory_pool(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     MemoryPool<Point> pool(pool_size);
     Point* block_pt = nullptr;
-    for (auto i = 0; i < pool_size; i++)
-    {
+    for (auto i = 0; i < pool_size; i++) {
       block_pt = pool.new_block_pt();
       block_pt->x = i;
       block_pt->y = i + 1;
@@ -60,12 +54,10 @@ static void benchmark_point_with_memory_pool(benchmark::State& state)
 static void benchmark_base1_with_memory_pool(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     MemoryPool<Base1> pool(pool_size);
     Base1* block_pt = nullptr;
-    for (auto i = 0; i < pool_size; i++)
-    {
+    for (auto i = 0; i < pool_size; i++) {
       block_pt = pool.new_block_pt();
       auto v = block_pt->GetNumber();
     }
@@ -76,12 +68,10 @@ static void benchmark_base1_with_memory_pool(benchmark::State& state)
 static void benchmark_base2_with_memory_pool(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     MemoryPool<Base2> pool(pool_size);
     Base2* block_pt = nullptr;
-    for (auto i = 0; i < pool_size; i++)
-    {
+    for (auto i = 0; i < pool_size; i++) {
       block_pt = pool.new_block_pt();
       auto v = block_pt->GetNumber();
     }
@@ -92,12 +82,10 @@ static void benchmark_base2_with_memory_pool(benchmark::State& state)
 static void benchmark_derived_with_memory_pool(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     MemoryPool<Derived> pool(pool_size);
     Derived* block_pt = nullptr;
-    for (auto i = 0; i < pool_size; i++)
-    {
+    for (auto i = 0; i < pool_size; i++) {
       block_pt = pool.new_block_pt();
       auto v1 = block_pt->GetNumber1();
       auto v2 = block_pt->GetNumber2();
@@ -113,12 +101,10 @@ static void benchmark_derived_with_memory_pool(benchmark::State& state)
 static void benchmark_derived_with_vector(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     std::vector<Derived> pool(pool_size);
     Derived* block_pt = nullptr;
-    for (auto i = 0; i < pool_size; i++)
-    {
+    for (auto i = 0; i < pool_size; i++) {
       // pool.emplace_back(Derived());
       block_pt = &pool[i];
       auto v1 = block_pt->GetNumber1();
@@ -136,8 +122,7 @@ static void benchmark_derived_random_allocations_and_deallocations_with_memory_p
   benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     MemoryPool<Derived> pool(pool_size);
     std::vector<Derived*> block_pointers(pool_size);
 
@@ -149,14 +134,11 @@ static void benchmark_derived_random_allocations_and_deallocations_with_memory_p
     std::shuffle(block_pointers.begin(), block_pointers.end(), rng);
 
     // Complete several rounds of random allocation/deallocation
-    for (auto round = 0; round < 100; round++)
-    {
-      for (auto i = 0; i < pool_size; i++)
-      {
+    for (auto round = 0; round < 100; round++) {
+      for (auto i = 0; i < pool_size; i++) {
         pool.delete_block_pt(block_pointers[i]);
       }
-      for (auto i = 0; i < pool_size; i++)
-      {
+      for (auto i = 0; i < pool_size; i++) {
         block_pointers[i] = pool.new_block_pt();
       }
     }
@@ -167,12 +149,10 @@ static void benchmark_derived_random_allocations_and_deallocations_with_memory_p
 static void benchmark_no_default_constructor_with_memory_pool(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     MemoryPool<NoDefaultConstructor> pool(pool_size);
     NoDefaultConstructor* block_pt = nullptr;
-    for (auto i = 0; i < pool_size; i++)
-    {
+    for (auto i = 0; i < pool_size; i++) {
       block_pt = pool.new_block_pt(NoDefaultConstructor(i));
       auto v = block_pt->GetNumber();
     }
@@ -183,8 +163,7 @@ static void benchmark_no_default_constructor_with_memory_pool(benchmark::State& 
 static void benchmark_table_pool_creation(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     MemoryPool<Derived> pool(pool_size);
   }
   state.SetComplexityN(state.range(0));
@@ -194,8 +173,7 @@ static void benchmark_table_pool_creation(benchmark::State& state)
 static void benchmark_table_pool_destruction(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     state.PauseTiming();
     MemoryPool<Derived> pool(pool_size);
     state.ResumeTiming();
@@ -208,13 +186,11 @@ static void benchmark_table_pool_destruction(benchmark::State& state)
 static void benchmark_table_pool_block_allocation(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     state.PauseTiming();
     MemoryPool<Derived> pool(pool_size);
     state.ResumeTiming();
-    for (auto i = 0; i < pool_size; i++)
-    {
+    for (auto i = 0; i < pool_size; i++) {
       pool.new_block_pt();
     }
   }
@@ -224,19 +200,16 @@ static void benchmark_table_pool_block_allocation(benchmark::State& state)
 static void benchmark_table_pool_block_deallocation(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     state.PauseTiming();
     MemoryPool<Derived> pool(pool_size);
     std::vector<Derived*> block_pointers(pool_size);
-    for (auto i = 0; i < pool_size; i++)
-    {
+    for (auto i = 0; i < pool_size; i++) {
       block_pointers[i] = pool.new_block_pt();
     }
     state.ResumeTiming();
 
-    for (auto i = 0; i < pool_size; i++)
-    {
+    for (auto i = 0; i < pool_size; i++) {
       pool.delete_block_pt(block_pointers[i]);
     }
   }
@@ -246,8 +219,7 @@ static void benchmark_table_pool_block_deallocation(benchmark::State& state)
 static void benchmark_table_pool_random_block_allocations(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     state.PauseTiming();
 
     MemoryPool<Derived> pool(pool_size);
@@ -263,17 +235,14 @@ static void benchmark_table_pool_random_block_allocations(benchmark::State& stat
     state.ResumeTiming();
 
     // Complete several rounds of random allocation/deallocation
-    for (auto round = 0; round < 100; round++)
-    {
+    for (auto round = 0; round < 100; round++) {
       state.PauseTiming();
-      for (auto i = 0; i < pool_size; i++)
-      {
+      for (auto i = 0; i < pool_size; i++) {
         pool.delete_block_pt(block_pointers[i]);
       }
       state.ResumeTiming();
 
-      for (auto i = 0; i < pool_size; i++)
-      {
+      for (auto i = 0; i < pool_size; i++) {
         block_pointers[i] = pool.new_block_pt();
       }
     }
@@ -284,8 +253,7 @@ static void benchmark_table_pool_random_block_allocations(benchmark::State& stat
 static void benchmark_table_pool_random_block_deallocations(benchmark::State& state)
 {
   const auto& pool_size = state.range(0);
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     state.PauseTiming();
 
     MemoryPool<Derived> pool(pool_size);
@@ -301,16 +269,13 @@ static void benchmark_table_pool_random_block_deallocations(benchmark::State& st
     state.ResumeTiming();
 
     // Complete several rounds of random allocation/deallocation
-    for (auto round = 0; round < 100; round++)
-    {
-      for (auto i = 0; i < pool_size; i++)
-      {
+    for (auto round = 0; round < 100; round++) {
+      for (auto i = 0; i < pool_size; i++) {
         pool.delete_block_pt(block_pointers[i]);
       }
 
       state.PauseTiming();
-      for (auto i = 0; i < pool_size; i++)
-      {
+      for (auto i = 0; i < pool_size; i++) {
         block_pointers[i] = pool.new_block_pt();
       }
       state.ResumeTiming();

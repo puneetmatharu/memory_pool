@@ -13,14 +13,12 @@ typedef void* PointerType;
 typedef char FixedStringType[256];
 
 // A basic struct
-struct Point
-{
+struct Point {
   int x, y, z;
 };
 
 // A class with a virtual function table
-class Base1
-{
+class Base1 {
 public:
   Base1() : number(rand()) { /*printf("Base1() %d = %d\n", this, number);*/ }
   virtual ~Base1() { /*printf("~Base1() %d\n", number);*/ }
@@ -33,8 +31,7 @@ protected:
 };
 
 // (Another class with a virtual function table)
-class Base2
-{
+class Base2 {
 public:
   Base2() : number2(rand()) { /*printf("Base2() %d = %d\n", this, number2); */ }
   virtual ~Base2() { /*printf("~Base2() %d\n", number2);*/ }
@@ -48,8 +45,7 @@ protected:
 
 // A multiply-inherited class with virtual functions and a Point class inside
 // it.
-class Derived : public Base2, public Base1
-{
+class Derived : public Base2, public Base1 {
 public:
   Derived() : number3(rand()) { /*printf("Derived() %d = %d\n", this, number3);*/ }
   ~Derived() { /*printf("~Derived() %d\n", number3);*/ }
@@ -66,8 +62,7 @@ public:
   int number3;
 };
 
-class NoDefaultConstructor
-{
+class NoDefaultConstructor {
 public:
   NoDefaultConstructor(int num) : number(num) {}
 

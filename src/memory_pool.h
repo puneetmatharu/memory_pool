@@ -9,8 +9,7 @@
 #include <string>
 #include <utility>
 
-namespace memory_pool
-{
+namespace memory_pool {
   /****************************************************************************************
    * @brief Type aliases
    *
@@ -28,18 +27,17 @@ namespace memory_pool
    * @brief Tracks the blocks in the pool that can be allocated to.
    *
    ****************************************************************************************/
-  class BlockTracker
-  {
+  class BlockTracker {
   public:
-    BlockTracker() : Blocks() {}
+    BlockTracker() = default;
     BlockTracker(const SizeT& num_blocks) : BlockTracker() { setup(num_blocks); }
-    ~BlockTracker() { Blocks = {}; }
+    ~BlockTracker() = default;
 
     void setup(const SizeT& num_blocks);
     void clear();
-    inline SizeT size() { return Blocks.size(); }
-    inline void push(SizeT block_index);
-    inline SizeT pop();
+    SizeT size() const { return Blocks.size(); }
+    void push(SizeT block_index);
+    SizeT pop();
 
   private:
     SizeT Num_blocks;
@@ -54,7 +52,9 @@ namespace memory_pool
   void BlockTracker::setup(const SizeT& num_blocks)
   {
     Num_blocks = num_blocks;
-    for (SizeT i = 0; i < Num_blocks; i++) Blocks.push(i);
+    for (SizeT i = 0; i < Num_blocks; i++) {
+      Blocks.push(i);
+    }
   }
 
   /****************************************************************************************
@@ -75,7 +75,7 @@ namespace memory_pool
   void BlockTracker::push(SizeT block_index)
   {
     assert(block_index < Num_blocks);
-    Blocks.push(std::move(block_index));
+    Blocks.push(block_index);
   }
 
   /****************************************************************************************
@@ -84,6 +84,9 @@ namespace memory_pool
    ****************************************************************************************/
   SizeT BlockTracker::pop()
   {
+    if (Blocks.empty()) {
+      throw std::runtime_error("BlockTracker is empty; cannot pop any more elements.");
+    }
     SizeT index = Blocks.top();
     Blocks.pop();
     return index;
@@ -96,8 +99,7 @@ namespace memory_pool
    * @tparam T: The type of the objects to be allocated for in the memory pool.
    ****************************************************************************************/
   template<class T>
-  class MemoryPool
-  {
+  class MemoryPool {
   public:
     // Default constructor. Initialises an empty pool. You must call allocate() separately
     // to create the pool
@@ -135,7 +137,7 @@ namespace memory_pool
 
   private:
     // Returns true if obj_pt points to an object of type T in the pool. Returns false otherwise
-    bool is_pool_member(const T* const obj_pt);
+    bool is_pool_member(const T* const obj_pt) const;
 
     // Computes the number of bytes allocated in the pool for the objects of type T
     inline SizeT size_in_bytes() { return Pool_size * sizeof(T); }
@@ -170,9 +172,12 @@ namespace memory_pool
   template<class T>
   void MemoryPool<T>::allocate(const SizeT& num_blocks)
   {
-    if (num_blocks > g_MaxNumberOfObjectsInPool) throw std::bad_alloc();
-    assert(Pool_pt == nullptr);
-    assert(Free_blocks_tracker.size() == 0);
+    if (num_blocks > g_MaxNumberOfObjectsInPool) {
+      throw std::bad_alloc();
+    }
+    if (Pool_pt != nullptr) {
+      this->clear();
+    }
     Pool_size = num_blocks;
     Pool_pt = new Byte[this->size_in_bytes()];
     Free_blocks_tracker.setup(Pool_size);
@@ -185,8 +190,7 @@ namespace memory_pool
   template<class T>
   void MemoryPool<T>::clear()
   {
-    if (Pool_pt != nullptr)
-    {
+    if (Pool_pt != nullptr) {
       delete[] Pool_pt;
       Pool_pt = nullptr;
     }
@@ -205,8 +209,8 @@ namespace memory_pool
 #ifndef NDEBUG
     throw_if_pool_has_no_more_available_space();
 #endif // NDEBUG
-    const auto index = Free_blocks_tracker.pop();
-    T* block_pt = static_cast<T*>((void*)this->start()) + index;
+    const auto block_index = Free_blocks_tracker.pop();
+    T* block_pt = reinterpret_cast<T*>(this->start()) + block_index;
     return block_pt;
   }
 
@@ -244,6 +248,9 @@ namespace memory_pool
   template<class T>
   void MemoryPool<T>::delete_block_pt(T*& obj_pt)
   {
+    if (obj_pt == nullptr) {
+      return;
+    }
     assert(is_pool_member(obj_pt));
     auto byte_pt = static_cast<const Byte* const>((void*)obj_pt);
     SizeT pos = (byte_pt - this->start()) / sizeof(T);
@@ -260,13 +267,10 @@ namespace memory_pool
    * @return false: If 'obj_pt' does not point to an object of type T in the pool.
    ****************************************************************************************/
   template<class T>
-  bool MemoryPool<T>::is_pool_member(const T* const obj_pt)
+  bool MemoryPool<T>::is_pool_member(const T* const obj_pt) const
   {
     std::ptrdiff_t offset = static_cast<const Byte* const>(obj_pt) - this->start();
-    if (offset < 0) return false;
-    if (offset > ((Pool_size - 1) * sizeof(T))) return false;
-    if (offset % sizeof(T) != 0) return false;
-    return true;
+    return (offset >= 0) && (offset < (Pool_size * sizeof(T))) && (offset % sizeof(T) == 0);
   }
 
   /****************************************************************************************

@@ -16,7 +16,7 @@ AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None
 BinPackArguments: "false"
 BinPackParameters: "false"
-BreakBeforeBraces: Allman
+BreakBeforeBraces: Stroustrup
 BreakBeforeTernaryOperators: "false"
 BreakConstructorInitializers: BeforeColon
 BreakInheritanceList: BeforeColon

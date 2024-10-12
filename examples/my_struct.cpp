@@ -4,8 +4,7 @@
 using memory_pool::MemoryPool;
 
 // Define your container
-struct MyStruct
-{
+struct MyStruct {
   int a;
   float b;
   double c;
@@ -22,15 +21,13 @@ int main()
   MemoryPool<MyStruct> pool(desired_pool_size);
 
   // Option 1: Assign to pointer after allocation
-  for (unsigned i = 0; i < mid; i++)
-  {
+  for (unsigned i = 0; i < mid; i++) {
     auto* obj_pt = pool.new_block_pt();
     *obj_pt = MyStruct{1, 0.0, 42.0, -9};
   }
 
   // Option 2: Assign data by moving rvalue during allocation
-  for (unsigned i = mid; i < desired_pool_size; i++)
-  {
+  for (unsigned i = mid; i < desired_pool_size; i++) {
     auto* obj_pt = pool.new_block_pt(MyStruct{1, 0.0, 42.0, -9});
   }
 

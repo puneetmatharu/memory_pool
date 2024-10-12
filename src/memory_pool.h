@@ -263,7 +263,8 @@ namespace memory_pool
   }
 
   /****************************************************************************************
-   * @brief Computes the number of bytes allocated in the pool for the objects of type T
+   * @brief Checks if there is any more available space in the pool and throws if there is
+   *        no more space available. Does nothing otherwise.
    *
    ****************************************************************************************/
   template<class T>

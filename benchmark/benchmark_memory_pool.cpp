@@ -16,8 +16,8 @@ static void benchmark_point_multiple_pool_allocations_with_memory_pool(benchmark
     MemoryPool<Point> pool;
     for (auto i = 0; i < 1000; i++)
     {
-      pool.create_pool(pool_size);
-      pool.destroy_pool();
+      pool.allocate(pool_size);
+      pool.clear();
     }
   }
 }
@@ -49,7 +49,7 @@ static void benchmark_point_with_memory_pool(benchmark::State& state)
     Point* block_pt = nullptr;
     for (auto i = 0; i < pool_size; i++)
     {
-      block_pt = pool.allocate_object();
+      block_pt = pool.new_block_pt();
       block_pt->x = i;
       block_pt->y = i + 1;
       block_pt->z = i + 2;
@@ -67,7 +67,7 @@ static void benchmark_base1_with_memory_pool(benchmark::State& state)
     Base1* block_pt = nullptr;
     for (auto i = 0; i < pool_size; i++)
     {
-      block_pt = pool.allocate_object();
+      block_pt = pool.new_block_pt();
       auto v = block_pt->GetNumber();
     }
   }
@@ -83,7 +83,7 @@ static void benchmark_base2_with_memory_pool(benchmark::State& state)
     Base2* block_pt = nullptr;
     for (auto i = 0; i < pool_size; i++)
     {
-      block_pt = pool.allocate_object();
+      block_pt = pool.new_block_pt();
       auto v = block_pt->GetNumber();
     }
   }
@@ -99,7 +99,7 @@ static void benchmark_derived_with_memory_pool(benchmark::State& state)
     Derived* block_pt = nullptr;
     for (auto i = 0; i < pool_size; i++)
     {
-      block_pt = pool.allocate_object();
+      block_pt = pool.new_block_pt();
       auto v1 = block_pt->GetNumber1();
       auto v2 = block_pt->GetNumber2();
       auto v3 = block_pt->GetNumber3();
@@ -143,7 +143,7 @@ static void benchmark_derived_random_allocations_and_deallocations_with_memory_p
     std::vector<Derived*> block_pointers(pool_size);
 
     // Allocate all blocks
-    for (auto i = 0; i < pool_size; i++) block_pointers[i] = pool.allocate_object();
+    for (auto i = 0; i < pool_size; i++) block_pointers[i] = pool.new_block_pt();
 
     // Shuffle the pointers so we deallocate/allocate in a random order
     auto rng = std::default_random_engine{};
@@ -154,11 +154,11 @@ static void benchmark_derived_random_allocations_and_deallocations_with_memory_p
     {
       for (auto i = 0; i < pool_size; i++)
       {
-        pool.deallocate_object(&block_pointers[i]);
+        pool.delete_block_pt(block_pointers[i]);
       }
       for (auto i = 0; i < pool_size; i++)
       {
-        block_pointers[i] = pool.allocate_object();
+        block_pointers[i] = pool.new_block_pt();
       }
     }
   }
@@ -174,7 +174,7 @@ static void benchmark_no_default_constructor_with_memory_pool(benchmark::State& 
     NoDefaultConstructor* block_pt = nullptr;
     for (auto i = 0; i < pool_size; i++)
     {
-      block_pt = pool.allocate_object(NoDefaultConstructor(i));
+      block_pt = pool.new_block_pt(NoDefaultConstructor(i));
       auto v = block_pt->GetNumber();
     }
   }

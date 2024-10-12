@@ -1,12 +1,13 @@
 # memory_pool
 
+A C++17 header-only library for a generic memory pool allocator that provides quick memory allocation/deallocation for objects of a given type.
+
 ## Usage
 
-```bash
-# Option 1: Configure with Makefile generator
-cmake -B build
+The fastest way to give the project a spin is to run the following steps:
 
-# Option 2: Configure with Ninja generator
+```bash
+# Configure. Omit the '-G Ninja' if you do not have Ninja
 cmake -G Ninja -B build
 
 # Build examples/tests/benchmarks
@@ -24,23 +25,37 @@ ctest
 
 ## Options
 
-| Name                              | Description       | Default         |
-| --------------------------------- | ----------------- | --------------- |
-| `MEMORY_POOL_ENABLE_TESTING`      | Enable tests      | `BUILD_TESTING` |
-| `MEMORY_POOL_ENABLE_BENCHMARKING` | Enable benchmarks | `ON`            |
+You can control the behaviour of the configure/build process with the flags in the table below.
+
+| Name                              | Description       | Default             |
+| --------------------------------- | ----------------- | ------------------- |
+| `MEMORY_POOL_ENABLE_TESTING`      | Enable tests      | `BUILD_TESTING`[^1] |
+| `MEMORY_POOL_ENABLE_BENCHMARKING` | Enable benchmarks | `ON`                |
+
+To use the above configuration options, you must specify the flags at configure-time using the `-D<FLAG>=ON`/`-D<FLAG>=OFF` syntax. For example
+
+```bash
+cmake -G Ninja -B build -D MEMORY_POOL_ENABLE_TESTING=OFF -D MEMORY_POOL_ENABLE_BENCHMARKING=OFF
+```
+
+**Important:** Make sure to wipe your `build/` directory if you wish to rebuild with different settings.
+
+[^1]: By default, the value of `BUILD_TESTING` will be `ON` for the `memory_pool` project (if built as a standalone project).
 
 ## `MemoryPool`
 
-The `MemoryPool` class, templated by type `T`, implements four key operations:
+The `MemoryPool` class, found in the `memory_pool` namespace, is templated by class `T` and implements four key operations:
 
-- `create_pool(const SizeT& max_object)`: Creates a pool large enough for 'max_object' objects of type `T`
-- `destroy_pool()`: Destroy the pool
-- `allocate_object()`: Allocate an object from this pool
-- `deallocate_object(T** const obj_pt)`: Deallocate an object from this pool
+- `allocate(const SizeT& max_object)`: Creates a pool large enough for '`max_object`' objects of type `T`
+- `clear()`: Destroys the pool
+- `new_block_pt()`: Allocates a block of memory to the user from the pool
+- `delete_block_pt(T*& obj_pt)`: Deallocates an object from this pool and sets the input pointer to `nullptr`
 
-The interface looks like below:
+The interface to the class looks like below:
 
 ```cpp
+using SizeT = uint64_t;
+
 template<class T>
 class MemoryPool
 {
@@ -49,23 +64,23 @@ public:
   MemoryPool(const SizeT& max_object);
   ~MemoryPool();
 
-  void create_pool(const SizeT& max_object = g_MaxNumberOfObjectsInPool);
-  void destroy_pool();
+  void allocate(const SizeT& max_object = g_MaxNumberOfObjectsInPool);
+  void clear();
 
-  T* allocate_object();
-  T* allocate_object(T&& obj);
-  void deallocate_object(T** const obj_pt);
+  T* new_block_pt();
+  T* new_block_pt(T&& obj);
+  void delete_block_pt(T*& obj_pt);
 
-  inline SizeT size();
-  inline SizeT available_capacity();
+  SizeT size();
+  SizeT available_capacity();
 };
 ```
 
 ## Creating your own example
 
-Enter the `examples/` folder, and create a new example called, say, `mystruct_example.cpp`.
+Enter the `examples/` folder, and create a new example called, say, `clever_struct.cpp`.
 
-**`mystruct_example.cpp`**:
+**`clever_struct.cpp`**:
 
 ```cpp
 #include "memory_pool.h"
@@ -73,7 +88,7 @@ Enter the `examples/` folder, and create a new example called, say, `mystruct_ex
 using memory_pool::MemoryPool;
 
 // Define your container
-struct MyStruct
+struct CleverStruct
 {
   int a;
   float b;
@@ -85,26 +100,26 @@ int main()
 {
   // NOTE: Number of objects in pool cannot exceed memory_pool::g_MaxNumberOfObjectsInPool
   const unsigned desired_pool_size = 100;
-  const unsigned mid = desired_pool_size / 2;
+  const unsigned mid = unsigned(desired_pool_size / 2);
 
   // Create pool of size 'desired_pool_size' templated by your container
-  MemoryPool<MyStruct> pool(desired_pool_size);
+  MemoryPool<CleverStruct> pool(desired_pool_size);
 
   // Option 1: Assign to pointer after allocation
   for (unsigned i = 0; i < mid; i++)
   {
-    auto* obj_pt = pool.allocate_object();
-    *obj_pt = MyStruct{1, 0.0, 42.0, -9};
+    auto* obj_pt = pool.new_block_pt();
+    *obj_pt = CleverStruct{1, 0.0, 42.0, -9};
   }
 
   // Option 2: Assign data by moving rvalue during allocation
   for (unsigned i = mid; i < desired_pool_size; i++)
   {
-    auto* obj_pt = pool.allocate_object(MyStruct{1, 0.0, 42.0, -9});
+    auto* obj_pt = pool.new_block_pt(CleverStruct{1, 0.0, 42.0, -9});
   }
 
-  // Do not try to allocate space than you have. Following line will lead to out of range error
-  pool.allocate_object(MyStruct{1, 0.0, 42.0, -9});
+  // Do not try to allocate space than you have. The next line will lead to an out-of-range error
+  pool.new_block_pt(CleverStruct{1, 0.0, 42.0, -9});
 }
 ```
 
@@ -114,16 +129,22 @@ then create an executable target in the `CMakeLists.txt`.
 
 ```cmake
 # -------------------------------------------------------------------------------------------------
-add_executable(example example.cpp)
-target_link_libraries(example PRIVATE memory_pool::memory_pool)
+# NOTE: Remember to link to the 'memory_pool::memory_pool' (header-only) library to help 
+# locate the memory_pool.h header.
 
-add_executable(example2 example2.cpp)
-target_link_libraries(example2 PRIVATE memory_pool::memory_pool)
+# Define 'example_classes' target to be created from 'example_classes.cpp'
+add_executable(example_classes example_classes.cpp)
+target_link_libraries(example_classes PRIVATE memory_pool::memory_pool)
 
-<!-- NEW LINES BELOW -->
-add_executable(mystruct_example mystruct_example.cpp)
-target_link_libraries(mystruct_example PRIVATE memory_pool::memory_pool)
-<!-- NEW LINES BELOW -->
+# Define 'my_struct' target to be created from 'my_struct.cpp'
+add_executable(my_struct my_struct.cpp)
+target_link_libraries(my_struct PRIVATE memory_pool::memory_pool)
+
+<!-- NEW LINES -->
+# Define 'clever_struct' target to be created from 'clever_struct.cpp'
+add_executable(clever_struct clever_struct.cpp)
+target_link_libraries(clever_struct PRIVATE memory_pool::memory_pool)
+<!-- NEW LINES -->
 # -------------------------------------------------------------------------------------------------
 ```
 

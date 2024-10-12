@@ -64,29 +64,25 @@ namespace memory_pool
   {
   public:
     MemoryPool() : Pool_pt(nullptr), Max_objects(0), Free_blocks_tracker() {}
-    MemoryPool(const SizeT& max_object) : MemoryPool() { create_pool(max_object); }
-    ~MemoryPool() { destroy_pool(); }
+    MemoryPool(const SizeT& max_object) : MemoryPool() { allocate(max_object); }
+    ~MemoryPool() { clear(); }
 
-    void create_pool(const SizeT& max_object = g_MaxNumberOfObjectsInPool);
-    void destroy_pool();
+    void allocate(const SizeT& max_object = g_MaxNumberOfObjectsInPool);
+    void clear();
 
-    T* allocate_object();
-    T* allocate_object(T&& obj);
-    void deallocate_object(T** const obj_pt);
+    T* new_block_pt();
+    T* new_block_pt(T&& obj);
+    void delete_block_pt(T*& obj_pt);
 
     inline SizeT size() { return Max_objects; }
     inline SizeT available_capacity() { return Free_blocks_tracker.size(); }
 
   private:
-    bool in_pool(const T* const obj_pt);
+    bool is_pool_member(const T* const obj_pt);
 
     inline SizeT size_in_bytes() { return Max_objects * sizeof(T); }
     inline Byte* start() { return Pool_pt; }
-    inline Byte* end() { return Pool_pt + size_in_bytes(); }
-
-    Byte* get_address_of_nth_block(const SizeT& block_index);
-    SizeT get_position_in_pool(const T& obj) { return get_position_in_pool(&obj); }
-    SizeT get_position_in_pool(const T* const obj_pt);
+    inline Byte* end() { return Pool_pt + this->size_in_bytes(); }
 
     void check_pool_has_available_space();
 
@@ -102,7 +98,7 @@ namespace memory_pool
    * @param max_object:
    ****************************************************************************************/
   template<class T>
-  void MemoryPool<T>::create_pool(const SizeT& max_object)
+  void MemoryPool<T>::allocate(const SizeT& max_object)
   {
     if (max_object > g_MaxNumberOfObjectsInPool) throw std::bad_alloc();
     assert(Pool_pt == nullptr);
@@ -118,7 +114,7 @@ namespace memory_pool
    * @tparam T:
    ****************************************************************************************/
   template<class T>
-  void MemoryPool<T>::destroy_pool()
+  void MemoryPool<T>::clear()
   {
     delete[] Pool_pt;
     Pool_pt = nullptr;
@@ -133,12 +129,11 @@ namespace memory_pool
    * @return T*:
    ****************************************************************************************/
   template<class T>
-  T* MemoryPool<T>::allocate_object()
+  T* MemoryPool<T>::new_block_pt()
   {
     check_pool_has_available_space();
     const auto index = Free_blocks_tracker.pop();
-    Byte* byte_pt = get_address_of_nth_block(index);
-    T* block_pt = static_cast<T*>((void*)byte_pt);
+    T* block_pt = static_cast<T*>((void*)this->start()) + index;
     return block_pt;
   }
 
@@ -150,10 +145,10 @@ namespace memory_pool
    * @return T*:
    ****************************************************************************************/
   template<class T>
-  T* MemoryPool<T>::allocate_object(T&& obj)
+  T* MemoryPool<T>::new_block_pt(T&& obj)
   {
     check_pool_has_available_space();
-    T* block_pt = allocate_object();
+    T* block_pt = new_block_pt();
     *block_pt = std::move(obj);
     return block_pt;
   }
@@ -165,12 +160,13 @@ namespace memory_pool
    * @param obj_pt:
    ****************************************************************************************/
   template<class T>
-  void MemoryPool<T>::deallocate_object(T** const obj_pt)
+  void MemoryPool<T>::delete_block_pt(T*& obj_pt)
   {
-    assert(in_pool(*obj_pt));
-    auto pos = get_position_in_pool(*obj_pt);
+    assert(is_pool_member(*obj_pt));
+    auto byte_pt = static_cast<const Byte* const>((void*)obj_pt);
+    SizeT pos = (byte_pt - this->start()) / sizeof(T);
     Free_blocks_tracker.push(pos);
-    *obj_pt = nullptr;
+    obj_pt = nullptr;
   }
 
   /****************************************************************************************
@@ -182,41 +178,13 @@ namespace memory_pool
    * @return false:
    ****************************************************************************************/
   template<class T>
-  bool MemoryPool<T>::in_pool(const T* const obj_pt)
+  bool MemoryPool<T>::is_pool_member(const T* const obj_pt)
   {
-    auto byte_pt = reinterpret_cast<const Byte* const>(obj_pt);
-    if ((byte_pt >= this->start()) or (byte_pt < this->end())) return true;
-    return false;
-  }
-
-  /****************************************************************************************
-   * @brief
-   *
-   * @tparam T:
-   * @param block_index:
-   * @return Byte*:
-   ****************************************************************************************/
-  template<class T>
-  Byte* MemoryPool<T>::get_address_of_nth_block(const SizeT& block_index)
-  {
-    assert(block_index <= Max_objects);
-    auto offset = block_index * sizeof(T);
-    return this->start() + offset;
-  }
-
-  /****************************************************************************************
-   * @brief
-   *
-   * @tparam T:
-   * @param obj_pt:
-   * @return SizeT:
-   ****************************************************************************************/
-  template<class T>
-  SizeT MemoryPool<T>::get_position_in_pool(const T* const obj_pt)
-  {
-    assert(in_pool(obj_pt));
-    auto byte_pt = reinterpret_cast<const Byte* const>(obj_pt);
-    return (byte_pt - Pool_pt) / sizeof(T);
+    std::ptrdiff_t offset = static_cast<const Byte* const>(obj_pt) - this->start();
+    if (offset < 0) return false;
+    if (offset > ((Max_objects - 1) * sizeof(T))) return false;
+    if (offset % sizeof(T) != 0) return false;
+    return true;
   }
 
   /****************************************************************************************

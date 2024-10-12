@@ -26,7 +26,7 @@ TEST_CASE("Base1")
 TEST_CASE("Base2")
 {
   MemoryPool<Base2> pool;
-  pool.create_pool(10);
+  pool.allocate(10);
   REQUIRE(pool.size() == 10);
 }
 
@@ -37,7 +37,7 @@ TEST_CASE("Derived")
   MemoryPool<Derived> pool(num_objects);
   REQUIRE(pool.size() == num_objects);
 
-  auto* block_pt = pool.allocate_object(Derived());
+  auto* block_pt = pool.new_block_pt(Derived());
 
   SUBCASE("Allocating a block reduces the available capacity")
   {
@@ -47,7 +47,7 @@ TEST_CASE("Derived")
 
   SUBCASE("After deallocating a block from a pointer, the pointer is nulled out")
   {
-    pool.deallocate_object(&block_pt);
+    pool.delete_block_pt(block_pt);
     CHECK(block_pt == nullptr);
     REQUIRE(pool.available_capacity() == num_objects);
     REQUIRE(pool.size() == num_objects);
@@ -61,7 +61,7 @@ TEST_CASE("NoDefaultConstructor")
   REQUIRE(pool.size() == 2);
   REQUIRE(pool.available_capacity() == 2);
 
-  NoDefaultConstructor* block1_pt = pool.allocate_object(NoDefaultConstructor(5));
+  NoDefaultConstructor* block1_pt = pool.new_block_pt(NoDefaultConstructor(5));
 
   SUBCASE("Check object assigned during block allocation is valid")
   {
@@ -69,7 +69,7 @@ TEST_CASE("NoDefaultConstructor")
     CHECK(pool.available_capacity() == 1);
   }
 
-  NoDefaultConstructor* block2_pt = pool.allocate_object();
+  NoDefaultConstructor* block2_pt = pool.new_block_pt();
   *block2_pt = NoDefaultConstructor(19);
 
   SUBCASE("Check object assigned after block allocation is valid")
@@ -81,6 +81,6 @@ TEST_CASE("NoDefaultConstructor")
   SUBCASE("Cannot allocate more than is available")
   {
     REQUIRE(pool.available_capacity() == 0);
-    CHECK_THROWS_AS(pool.allocate_object(NoDefaultConstructor(3)), std::out_of_range);
+    CHECK_THROWS_AS(pool.new_block_pt(NoDefaultConstructor(3)), std::out_of_range);
   }
 }

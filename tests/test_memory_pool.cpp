@@ -78,9 +78,14 @@ TEST_CASE("NoDefaultConstructor")
     CHECK(block2_pt->GetNumber() == 19);
   }
 
+#ifndef NDEBUG
+  // NOTE: MemoryPool only checks that the pool has available space when asserts are enabled,
+  // and will produce a std::out_of_range exception. Otherwise, the attempt to allocate another
+  // block will produce a segmentation fault.
   SUBCASE("Cannot allocate more than is available")
   {
     REQUIRE(pool.available_capacity() == 0);
     CHECK_THROWS_AS(pool.new_block_pt(NoDefaultConstructor(3)), std::out_of_range);
   }
+#endif // NDEBUG
 }

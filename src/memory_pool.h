@@ -185,8 +185,11 @@ namespace memory_pool
   template<class T>
   void MemoryPool<T>::clear()
   {
-    delete[] Pool_pt;
-    Pool_pt = nullptr;
+    if (Pool_pt != nullptr)
+    {
+      delete[] Pool_pt;
+      Pool_pt = nullptr;
+    }
     Pool_size = 0;
     Free_blocks_tracker.clear();
   }

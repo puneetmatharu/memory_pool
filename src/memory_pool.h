@@ -32,7 +32,7 @@ namespace memory_pool
   {
   public:
     BlockTracker() : Blocks() {}
-    BlockTracker(const SizeT& num_blocks) : BlockTracker() {}
+    BlockTracker(const SizeT& num_blocks) : BlockTracker() { setup(num_blocks); }
     ~BlockTracker() { Blocks = {}; }
 
     void setup(const SizeT& num_blocks);

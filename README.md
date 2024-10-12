@@ -1,6 +1,20 @@
-# memory_pool
+<div align="center">
+  <img alt="memory_pool" src="./assets/logo.png" width="50%" max-width="300px">
+</div>
+
+<h2>memory_pool</h2>
 
 A C++17 header-only library for a generic memory pool allocator that provides quick memory allocation/deallocation for objects of a given type.
+
+<!-- Use <h2> tags to omit heading from table of contents -->
+<h2>Table of contents</h2>
+
+- [Usage](#usage)
+- [Options](#options)
+- [`MemoryPool`](#memorypool)
+- [Creating your own example](#creating-your-own-example)
+- [Pre-commit hooks](#pre-commit-hooks)
+
 
 ## Usage
 

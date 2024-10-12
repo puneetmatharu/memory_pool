@@ -3,11 +3,16 @@
 </div>
 
 <div align="center">
-  <a href="./LICENCE">
+  <a href="./LICENSE">
     <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue">
-    <img alt="Ubuntu" src="../../actions/workflows/linux.yaml/badge.svg?branch=main">
-    <img alt="macOS" src="../../actions/workflows/macos.yaml/badge.svg?branch=main">
   </a>
+  <a href="../../actions/workflows/linux.yaml">
+    <img alt="Ubuntu tests" src="../../actions/workflows/linux.yaml/badge.svg?branch=main">
+  </a>
+  <a href="../../actions/workflows/macos.yaml">
+    <img alt="macOS tests" src="../../actions/workflows/macos.yaml/badge.svg?branch=main">
+  </a>
+
 </div>
 
 <h2>memory_pool</h2>

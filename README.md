@@ -2,6 +2,14 @@
   <img alt="memory_pool" src="./assets/logo.png" width="50%" max-width="300px">
 </div>
 
+<div align="center">
+  <a href="./LICENCE">
+    <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue">
+    <img alt="Ubuntu" src="../../actions/workflows/linux.yaml/badge.svg?branch=main">
+    <img alt="macOS" src="../../actions/workflows/macos.yaml/badge.svg?branch=main">
+  </a>
+</div>
+
 <h2>memory_pool</h2>
 
 A C++17 header-only library for a generic memory pool that provides quick memory allocation/deallocation for objects of a given type.

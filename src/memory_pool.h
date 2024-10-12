@@ -199,7 +199,9 @@ namespace memory_pool
   template<class T>
   T* MemoryPool<T>::new_block_pt()
   {
+#ifndef NDEBUG
     throw_if_pool_has_no_more_available_space();
+#endif // NDEBUG
     const auto index = Free_blocks_tracker.pop();
     T* block_pt = static_cast<T*>((void*)this->start()) + index;
     return block_pt;
@@ -218,7 +220,9 @@ namespace memory_pool
   template<class T>
   T* MemoryPool<T>::new_block_pt(T&& obj)
   {
+#ifndef NDEBUG
     throw_if_pool_has_no_more_available_space();
+#endif // NDEBUG
     T* block_pt = new_block_pt();
     *block_pt = std::move(obj);
     return block_pt;

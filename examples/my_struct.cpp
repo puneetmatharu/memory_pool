@@ -35,8 +35,14 @@ int main()
   }
 
   // Do not try to allocate space than you have. Following line will lead to out of range error
+#ifdef NDEBUG
+  std::cout << "\nAttempting to allocate memory when the pool is already full."
+            << "\nExpect a segmentation fault.\n"
+            << std::endl;
+#else
   std::cout << "\nAttempting to allocate memory when the pool is already full."
             << "\nExpect an std::out_of_range error.\n"
             << std::endl;
+#endif
   pool.new_block_pt(MyStruct{1, 0.0, 42.0, -9});
 }

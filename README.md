@@ -4,7 +4,7 @@
 
 <h2>memory_pool</h2>
 
-A C++17 header-only library for a generic memory pool allocator that provides quick memory allocation/deallocation for objects of a given type.
+A C++17 header-only library for a generic memory pool that provides quick memory allocation/deallocation for objects of a given type.
 
 <!-- Use <h2> tags to omit heading from table of contents -->
 <h2>Table of contents</h2>
@@ -60,12 +60,12 @@ cmake -G Ninja -B build -D MEMORY_POOL_ENABLE_TESTING=OFF -D MEMORY_POOL_ENABLE_
 
 The `MemoryPool` class, found in the `memory_pool` namespace, is templated by class `T` and implements four key operations:
 
-- `allocate(const SizeT& max_object)`: Creates a pool large enough for '`max_object`' objects of type `T`
+- `allocate(const SizeT& num_blocks)`: Creates a pool large enough for '`num_blocks`' objects of type `T`
 - `clear()`: Destroys the pool
 - `new_block_pt()`: Allocates a block of memory to the user from the pool
 - `delete_block_pt(T*& obj_pt)`: Deallocates an object from this pool and sets the input pointer to `nullptr`
 
-The interface to the class looks like below:
+A simplified version of the class interface is as follows:
 
 ```cpp
 using SizeT = uint64_t;
@@ -74,18 +74,37 @@ template<class T>
 class MemoryPool
 {
 public:
+  // Default constructor; must call allocate() separately to create the pool
   MemoryPool();
-  MemoryPool(const SizeT& max_object);
+
+  // Immediately creates a pool for 'num_blocks' objects of type T. The argument must
+  // not exceed the value of 'g_MaxNumberOfObjectsInPool' in the 'memory_pool' namespace
+  MemoryPool(const SizeT& num_blocks);
+
+  // Destructor. Handles the clean-up
   ~MemoryPool();
 
-  void allocate(const SizeT& max_object = g_MaxNumberOfObjectsInPool);
+  // Allocate space for 'num_blocks' objects of type T
+  void allocate(const SizeT& num_blocks = g_MaxNumberOfObjectsInPool);
+
+  // Clean up
   void clear();
 
+  // Returns a pointer to an available block in the memory pool
   T* new_block_pt();
+
+  // Returns a pointer to an available block in the memory pool and assigns 'obj' to the
+  // location addressed by the pointer
   T* new_block_pt(T&& obj);
+
+  // "Deletes" the data pointed to by 'obj_pt' and nullifies the input pointer. Do not try
+  // to access obj_pt after this function has been called
   void delete_block_pt(T*& obj_pt);
 
+  // The total number of objects this pool can hold
   SizeT size();
+
+  // The remaining number of objects this pool can hold
   SizeT available_capacity();
 };
 ```

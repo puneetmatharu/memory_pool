@@ -12,7 +12,6 @@
   <a href="../../actions/workflows/macos.yaml">
     <img alt="macOS tests" src="../../actions/workflows/macos.yaml/badge.svg?branch=main">
   </a>
-
 </div>
 
 <h2>memory_pool</h2>
@@ -27,6 +26,7 @@ A C++17 header-only library for a generic memory pool that provides quick memory
 - [`MemoryPool`](#memorypool)
 - [Creating your own example](#creating-your-own-example)
 - [Performance](#performance)
+  - [Summary table](#summary-table)
 - [Pre-commit hooks](#pre-commit-hooks)
 
 
@@ -220,7 +220,7 @@ The results we present below illustrate the performance of `MemoryPool` for pool
 
 **Pool creation:**
 
-The table below illustrates how the runtime cost of pool creation changes with increasing pool size. The creation process has $O(N)$ runtime complexity. It is dominated by the cost of allocating a raw array for each pool.
+The table below illustrates how the runtime cost of pool creation changes with increasing pool size. The creation process has $O(N)$ runtime complexity. It is dominated by the cost of allocating a raw array for each pool. The memory complexity is $O(N)$.
 
 ```bash
 ------------------------------------------------------------------------------------------
@@ -239,7 +239,7 @@ benchmark_table_pool_creation_RMS                        5 %             5 %
 
 **Pool destruction:**
 
-The table below illustrates how the runtime cost of pool destruction changes with increasing pool size. The destruction process has $O(N)$ runtime complexity. It is dominated by the cost of deallocating a raw array for each pool.
+The table below illustrates how the runtime cost of pool destruction changes with increasing pool size. The destruction process has $O(N)$ runtime complexity. It is dominated by the cost of deallocating a raw array for each pool. The memory complexity is $O(N)$.
 
 ```bash
 ------------------------------------------------------------------------------------------
@@ -262,9 +262,9 @@ Pool allocation has $O(N)$ complexity.
 
 *Sequential allocations:*
 
-The table below illustrates how the runtime cost of allocating a full pool changes with increasing pool size. Within each benchmark run, we allocate `<pool-size>` blocks *sequentially* for the user. 
+The table below illustrates how the runtime cost of allocating a full pool changes with increasing pool size. Within each benchmark run, we allocate `<pool-size>` blocks *sequentially* for the user. A block allocation just involves popping a value from a stack, creating a pointer and doing some simple pointer arithmetic. Therefore, the memory complexity per block allocation is $O(1)$.
 
-Since this process has $O(N)$ cost (see table) for a full pool of allocations, we can deduce that a single allocation has $O(1)$ cost. This is to be expected, since the allocation process just involves popping a value from a stack, creating a pointer and doing some simple pointer arithmetic.
+Since this process has $O(N)$ runtime cost (see table) for a full pool of allocations, we can deduce that a single allocation has $O(1)$ runtime cost, which is expected.
 
 ```bash
 ------------------------------------------------------------------------------------------
@@ -285,7 +285,7 @@ benchmark_table_pool_allocation_RMS                     16 %            16 %
 
 With this benchmark, we allocate `<pool-size>` blocks *in a random order* for the user. To do so, we first allocate all blocks, reshuffle their pointers and deallocate all blocks. We then allocate all of the blocks, and time this step. As a result, the blocks will be allocated in a random order. (Note: this does rely on knowing that the blocks are allocated in the reverse of the order that they were deallocated.)
 
-Again, this process has $O(N)$ cost (see table) for a full pool of allocations, so we can deduce that a single (random) allocation has $O(1)$ cost.
+Again, this process has $O(N)$ runtime cost (see table) for a full pool of allocations, so we can deduce that a single (random) allocation has $O(1)$ runtime cost. The memory complexity per block allocation is still $O(1)$.
 
 ```bash
 ------------------------------------------------------------------------------------------
@@ -306,9 +306,9 @@ benchmark_table_pool_random_allocations_RMS             10 %            10 %
 
 *Sequential deallocations:*
 
-The table below illustrates how the runtime cost of deallocating a full pool changes with increasing pool size. Within each benchmark run, we allocate `<pool-size>` blocks *sequentially* for the user. To do so, we first allocate all of the blocks.
+The table below illustrates how the runtime cost of deallocating a full pool changes with increasing pool size. Within each benchmark run, we allocate `<pool-size>` blocks *sequentially* for the user. To do so, we first allocate all of the blocks. A block deallocation just involves pushing a value from a stack and setting a pointer to `nullptr`. We do not need to touch the block of memory that has to be "deallocated"; it will simply be overwritten at a later time. Therefore, the memory complexity per block allocation is $O(1)$.
 
-Since this process has $O(N)$ cost (see table) for a full pool of deallocations, we can deduce that a single deallocation has $O(1)$ cost. Again, this is to be expected, since the deallocation process just involves pushing a value from a stack and setting a pointer to `nullptr`. We do not need to touch the block of memory that has to be "deallocated"; it will simply be overwritten at a later time.
+Since this process has $O(N)$ runtime cost (see table) for a full pool of deallocations, we can deduce that a single deallocation has $O(1)$ runtime cost, which is expected.
 
 ```bash
 ------------------------------------------------------------------------------------------
@@ -329,7 +329,7 @@ benchmark_table_pool_deallocation_RMS                    9 %             9 %
 
 With this benchmark, we deallocate `<pool-size>` blocks *in a random order* for the user. To do so, we first allocate all blocks then reshuffle their pointers. We then deallocate all of the blocks, and time this step.
 
-Again, this process has $O(N)$ cost (see table) for a full pool of deallocations, so we can deduce that a single (random) deallocation has $O(1)$ cost.
+Again, this process has $O(N)$ runtime cost (see table) for a full pool of deallocations, so we can deduce that a single (random) deallocation has $O(1)$ runtime cost. The memory complexity per block allocation is still $O(1)$.
 
 ```bash
 ------------------------------------------------------------------------------------------
@@ -345,6 +345,15 @@ benchmark_table_pool_random_deallocations/32768    3095973 ns      3095656 ns   
 benchmark_table_pool_random_deallocations_BigO       95.03 N         95.02 N    
 benchmark_table_pool_random_deallocations_RMS            9 %             9 % 
 ```
+
+### Summary table
+
+| Operation                 | Runtime complexity | Memory complexity |
+| ------------------------- | ------------------ | ----------------- |
+| Pool creation             | $O(N)$             | $O(N)$            |
+| Pool destruction          | $O(N)$             | $O(N)$            |
+| Single block allocation   | $O(1)$             | $O(1)$            |
+| Single block deallocation | $O(1)$             | $O(1)$            |
 
 ## Pre-commit hooks
 
